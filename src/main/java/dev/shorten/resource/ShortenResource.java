@@ -35,9 +35,15 @@ public class ShortenResource
         return shortenService.getOriginalURL(shortCode);
     }
 
+    @DELETE
+    @Path("/{shortCode}")
+    public Response removeShortCode(@PathParam("shortCode") String shortCode) {
+        return shortenService.deleteShortCodeURL(shortCode);
+    }
+
     @GET
-    @Path("/test")
-    public Response test() {
-        return Response.ok("hi").build();
+    @Path("/{shortCode}/stats")
+    public Response getShortCodeStats(@PathParam("shortCode") String shortCode) {
+        return shortenService.getShortCodeStats(shortCode);
     }
 }

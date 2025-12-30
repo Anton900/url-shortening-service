@@ -71,5 +71,29 @@ public class ShortenService
         return Response.ok(message).build();
     }
 
+    public Response deleteShortCodeURL(String shortCode) {
+        ShortCodeResponse message = shortCodeDB.remove(shortCode);
+        if (message == null)
+        {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Short code not found").build();
+        }
+
+        return Response.ok(message).build();
+    }
+
+    public Response getShortCodeStats(String shortCode) {
+        ShortCodeResponse message = shortCodeDB.get(shortCode);
+        if (message == null)
+        {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Short code not found").build();
+        }
+
+        message.incrementAccessCount();
+
+        return Response.ok(message).build();
+    }
+
 }
 
