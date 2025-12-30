@@ -1,8 +1,11 @@
 package dev.shorten.service;
 
+import dev.shorten.model.ShortCodeEntity;
 import dev.shorten.model.dto.ShortCodeResponse;
+import dev.shorten.model.dto.ShortCodeStatsResponse;
 import dev.shorten.util.ShortenUtil;
 import dev.shorten.util.ValidateURLUtil;
+import dev.shorten.util.mapper.ShortCodeMapper;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.ws.rs.core.Response;
 
@@ -13,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ShortenService
 {
 
-    private Map<String, ShortCodeResponse> shortCodeDB = new ConcurrentHashMap<>();
+    private Map<String, ShortCodeEntity> shortCodeDB = new ConcurrentHashMap<>();
     private static final int MAX_ATTEMPTS = 10;
 
     public Response createShortenURL(String url) {
@@ -29,13 +32,14 @@ public class ShortenService
              String shortCode = ShortenUtil.createShortCode(5);
 
             // create message only when needed to avoid unnecessary allocations
-            ShortCodeResponse message = ShortCodeResponse.create(url, shortCode);
+            ShortCodeEntity shortCodeEntity = ShortCodeEntity.create(url, shortCode);
 
             // if null returned then insertion succeeded
-            ShortCodeResponse existing = shortCodeDB.putIfAbsent(shortCode, message);
+            ShortCodeEntity existing = shortCodeDB.putIfAbsent(shortCode, shortCodeEntity);
             if (existing == null)
             {
-                return Response.ok(message).build();
+                ShortCodeResponse response = ShortCodeMapper.toShortCodeResponse(shortCodeEntity);
+                return Response.status(Response.Status.CREATED).entity(response).build();
             }
             // otherwise a collision happened, try again
         }
@@ -45,54 +49,59 @@ public class ShortenService
     }
 
     public Response getOriginalURL(String shortCode) {
-        ShortCodeResponse message = shortCodeDB.get(shortCode);
-        if (message == null)
+        ShortCodeEntity shortCodeEntity = shortCodeDB.get(shortCode);
+        if (shortCodeEntity == null)
         {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Short code not found").build();
         }
 
-        message.incrementAccessCount();
+        shortCodeEntity.incrementAccessCount();
 
-        return Response.ok(message).build();
+        ShortCodeResponse response = ShortCodeMapper.toShortCodeResponse(shortCodeEntity);
+
+        return Response.status(Response.Status.OK).entity(response).build();
     }
 
     public Response updateOriginalURL(String shortCode, String updatedUrl) {
-        ShortCodeResponse message = shortCodeDB.get(shortCode);
-        if (message == null)
+        ShortCodeEntity shortCodeEntity = shortCodeDB.get(shortCode);
+        if (shortCodeEntity == null)
         {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Short code not found").build();
         }
 
-        message.setUrl(updatedUrl);
-        message.incrementAccessCount();
+        shortCodeEntity.setUrl(updatedUrl);
+        shortCodeEntity.incrementAccessCount();
 
-        return Response.ok(message).build();
+        ShortCodeResponse response = ShortCodeMapper.toShortCodeResponse(shortCodeEntity);
+
+        return Response.status(Response.Status.OK).entity(response).build();
     }
 
     public Response deleteShortCodeURL(String shortCode) {
-        ShortCodeResponse message = shortCodeDB.remove(shortCode);
-        if (message == null)
+        ShortCodeEntity shortCodeEntity = shortCodeDB.remove(shortCode);
+        if (shortCodeEntity == null)
         {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Short code not found").build();
         }
 
-        return Response.ok(message).build();
+        return Response.status(Response.Status.NO_CONTENT).build();
     }
 
     public Response getShortCodeStats(String shortCode) {
-        ShortCodeResponse message = shortCodeDB.get(shortCode);
-        if (message == null)
+        ShortCodeEntity shortCodeEntity = shortCodeDB.get(shortCode);
+        if (shortCodeEntity == null)
         {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Short code not found").build();
         }
 
-        message.incrementAccessCount();
+        shortCodeEntity.incrementAccessCount();
+        ShortCodeStatsResponse response = ShortCodeMapper.toShortCodeStatsResponse(shortCodeEntity);
 
-        return Response.ok(message).build();
+        return Response.status(Response.Status.OK).entity(response).build();
     }
 
 }
