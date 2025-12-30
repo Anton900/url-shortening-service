@@ -22,6 +22,13 @@ public class ShortenResource
         return shortenService.createShortenURL(url);
     }
 
+    @PUT
+    @Path("/{shortCode}")
+    public Response updateShortenURL(@PathParam("shortCode") String shortCode, CreateShortenRequest request) {
+        String url = request.url();
+        return shortenService.updateOriginalURL(shortCode, url);
+    }
+
     @GET
     @Path("/{shortCode}")
     public Response getOriginalURL(@PathParam("shortCode") String shortCode) {

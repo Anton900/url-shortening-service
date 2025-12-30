@@ -1,6 +1,6 @@
 package dev.shorten.util;
 
-import dev.shorten.model.ShortCodeMessage;
+import dev.shorten.model.dto.ShortCodeResponse;
 
 import java.util.Map;
 
@@ -18,7 +18,7 @@ public class ShortenUtil
         return shortCode.toString();
     }
 
-    public static boolean shortCodeAlreadyExists(String shortCode, Map<String, ShortCodeMessage> db) {
+    public static boolean shortCodeAlreadyExists(String shortCode, Map<String, ShortCodeResponse> db) {
         return db.containsKey(shortCode);
     }
 

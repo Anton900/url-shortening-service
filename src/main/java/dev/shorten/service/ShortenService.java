@@ -1,6 +1,6 @@
 package dev.shorten.service;
 
-import dev.shorten.model.ShortCodeMessage;
+import dev.shorten.model.dto.ShortCodeResponse;
 import dev.shorten.util.ShortenUtil;
 import dev.shorten.util.ValidateURLUtil;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ShortenService
 {
 
-    private Map<String, ShortCodeMessage> shortCodeDB = new ConcurrentHashMap<>();
+    private Map<String, ShortCodeResponse> shortCodeDB = new ConcurrentHashMap<>();
     private static final int MAX_ATTEMPTS = 10;
 
     public Response createShortenURL(String url) {
@@ -29,10 +29,10 @@ public class ShortenService
              String shortCode = ShortenUtil.createShortCode(5);
 
             // create message only when needed to avoid unnecessary allocations
-            ShortCodeMessage message = ShortCodeMessage.create(url, shortCode);
+            ShortCodeResponse message = ShortCodeResponse.create(url, shortCode);
 
             // if null returned then insertion succeeded
-            ShortCodeMessage existing = shortCodeDB.putIfAbsent(shortCode, message);
+            ShortCodeResponse existing = shortCodeDB.putIfAbsent(shortCode, message);
             if (existing == null)
             {
                 return Response.ok(message).build();
@@ -45,17 +45,30 @@ public class ShortenService
     }
 
     public Response getOriginalURL(String shortCode) {
-        ShortCodeMessage message = shortCodeDB.get(shortCode);
+        ShortCodeResponse message = shortCodeDB.get(shortCode);
         if (message == null)
         {
             return Response.status(Response.Status.NOT_FOUND)
                     .entity("Short code not found").build();
         }
 
-        // Increment access count
-        message.accessCount().incrementAndGet();
+        message.incrementAccessCount();
 
-        return Response.ok(message.url()).build();
+        return Response.ok(message).build();
+    }
+
+    public Response updateOriginalURL(String shortCode, String updatedUrl) {
+        ShortCodeResponse message = shortCodeDB.get(shortCode);
+        if (message == null)
+        {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Short code not found").build();
+        }
+
+        message.setUrl(updatedUrl);
+        message.incrementAccessCount();
+
+        return Response.ok(message).build();
     }
 
 }
