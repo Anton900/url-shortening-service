@@ -16,8 +16,8 @@ public class ShortenService
     private Map<String, ShortCodeMessage> shortCodeDB = new ConcurrentHashMap<>();
     private static final int MAX_ATTEMPTS = 10;
 
-    public Response createShortenURL(String originalURL) {
-        if (!ValidateURLUtil.isValid(originalURL))
+    public Response createShortenURL(String url) {
+        if (!ValidateURLUtil.isValid(url))
         {
             return Response.status(Response.Status.BAD_REQUEST)
                     .entity("Invalid URL provided").build();
@@ -26,10 +26,10 @@ public class ShortenService
         // Try to generate a unique short code with limited attempts, to avoid infinite loops
         for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
         {
-            String shortCode = ShortenUtil.createShortCode(5);
+             String shortCode = ShortenUtil.createShortCode(5);
 
             // create message only when needed to avoid unnecessary allocations
-            ShortCodeMessage message = ShortCodeMessage.create(originalURL, shortCode);
+            ShortCodeMessage message = ShortCodeMessage.create(url, shortCode);
 
             // if null returned then insertion succeeded
             ShortCodeMessage existing = shortCodeDB.putIfAbsent(shortCode, message);
@@ -42,6 +42,20 @@ public class ShortenService
 
         return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
                 .entity("Could not generate unique short code, please try again").build();
+    }
+
+    public Response getOriginalURL(String shortCode) {
+        ShortCodeMessage message = shortCodeDB.get(shortCode);
+        if (message == null)
+        {
+            return Response.status(Response.Status.NOT_FOUND)
+                    .entity("Short code not found").build();
+        }
+
+        // Increment access count
+        message.accessCount().incrementAndGet();
+
+        return Response.ok(message.url()).build();
     }
 
 }
