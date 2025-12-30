@@ -33,4 +33,8 @@ public class ShortCodeEntity
         this.getAccessCount().incrementAndGet();
     }
 
+    public void updateUpdatedAtTimestamp() {
+        this.setUpdatedAt(new Timestamp(System.currentTimeMillis()));
+    }
+
 }

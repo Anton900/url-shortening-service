@@ -18,6 +18,7 @@ public class ShortenService
 
     private Map<String, ShortCodeEntity> shortCodeDB = new ConcurrentHashMap<>();
     private static final int MAX_ATTEMPTS = 10;
+    private final int SHORT_CODE_SIZE = 6;
 
     public Response createShortenURL(String url) {
         if (!ValidateURLUtil.isValid(url))
@@ -29,7 +30,7 @@ public class ShortenService
         // Try to generate a unique short code with limited attempts, to avoid infinite loops
         for (int attempt = 0; attempt < MAX_ATTEMPTS; attempt++)
         {
-             String shortCode = ShortenUtil.createShortCode(5);
+             String shortCode = ShortenUtil.createShortCode(SHORT_CODE_SIZE);
 
             // create message only when needed to avoid unnecessary allocations
             ShortCodeEntity shortCodeEntity = ShortCodeEntity.create(url, shortCode);
@@ -72,6 +73,7 @@ public class ShortenService
         }
 
         shortCodeEntity.setUrl(updatedUrl);
+        shortCodeEntity.updateUpdatedAtTimestamp();
         shortCodeEntity.incrementAccessCount();
 
         ShortCodeResponse response = ShortCodeMapper.toShortCodeResponse(shortCodeEntity);
